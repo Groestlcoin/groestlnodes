@@ -12,7 +12,7 @@ from protocol import Serializer
 class Reader(Cache):
     def __init__(self, filepath):
         self.filepath = filepath
-        self.serializer = Serializer(magic_number=unhexlify('f9beb4d9'))
+        self.serializer = Serializer(magic_number=unhexlify('f9beb4d4'))
         self.streams = defaultdict(PriorityQueue)
         self.stream = Stream()
 
@@ -26,7 +26,7 @@ def test_bip144():
     msgs = []
 
     for stream_id, reader.stream.segments in reader.streams.iteritems():
-        assert stream_id == ('1.1.1.1', 56691, '2.2.2.2', 8333)
+        assert stream_id == ('1.1.1.1', 56691, '2.2.2.2', 1331)
         msg, _ = reader.serializer.deserialize_msg(reader.stream.data().next())
         msgs.append(msg)
 

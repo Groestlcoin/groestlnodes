@@ -29,14 +29,14 @@ Bitcoin protocol access for Bitnodes.
 Reference: https://en.bitcoin.it/wiki/Protocol_specification
 
 -------------------------------------------------------------------------------
-                     PACKET STRUCTURE FOR BITCOIN PROTOCOL
+                     PACKET STRUCTURE FOR GROESTLCOIN PROTOCOL
                            protocol version >= 70001
 -------------------------------------------------------------------------------
 [---MESSAGE---]
-[ 4] MAGIC_NUMBER               (\xF9\xBE\xB4\xD9)                  uint32_t
+[ 4] MAGIC_NUMBER               (\xF9\xBE\xB4\xD4)                  uint32_t
 [12] COMMAND                                                        char[12]
 [ 4] LENGTH                     <I (len(payload))                   uint32_t
-[ 4] CHECKSUM                   (sha256(sha256(payload))[:4])       uint32_t
+[ 4] CHECKSUM                   groestl(groestl(payload)[:4])       uint32_t
 [..] PAYLOAD                    see below
 
     [---VERSION_PAYLOAD---]
@@ -137,7 +137,6 @@ Reference: https://en.bitcoin.it/wiki/Protocol_specification
 """
 
 import gevent
-import hashlib
 import random
 import socket
 import socks
@@ -150,15 +149,16 @@ from collections import deque
 from cStringIO import StringIO
 from io import SEEK_CUR
 from operator import itemgetter
+from groestlcoin_hash import getHash
 
-MAGIC_NUMBER = "\xF9\xBE\xB4\xD9"
-PORT = 8333
+MAGIC_NUMBER = "\xF9\xBE\xB4\xD4"
+PORT = 1331
 MIN_PROTOCOL_VERSION = 70001
 PROTOCOL_VERSION = 70015
 FROM_SERVICES = 0
 TO_SERVICES = 1  # NODE_NETWORK
-USER_AGENT = "/bitnodes.earn.com:0.1/"
-HEIGHT = 478000
+USER_AGENT = "/groestlnodes:0.1/"
+HEIGHT = 2651000
 RELAY = 0  # set to 1 to receive all txs
 
 SOCKET_BUFSIZE = 8192
@@ -208,8 +208,8 @@ class RemoteHostClosedConnection(ConnectionError):
     pass
 
 
-def sha256(data):
-    return hashlib.sha256(data).digest()
+def groestlhash(data):
+    return getHash(data, len(data))
 
 
 def unpack(fmt, string):
@@ -287,7 +287,7 @@ class Serializer(object):
 
         msg.extend([
             struct.pack("<I", len(payload)),
-            sha256(sha256(payload))[:4],
+            groestlhash(payload)[:4],
             payload,
         ])
 
@@ -311,7 +311,7 @@ class Serializer(object):
                 data_len, HEADER_LEN + msg['length']))
 
         payload = data.read(msg['length'])
-        computed_checksum = sha256(sha256(payload))[:4]
+        computed_checksum = groestlhash(payload)[:4]
         if computed_checksum != msg['checksum']:
             raise InvalidPayloadChecksum("{} != {}".format(
                 hexlify(computed_checksum), hexlify(msg['checksum'])))
@@ -499,7 +499,7 @@ class Serializer(object):
 
         # Calculate hash from the entire payload
         payload = self.serialize_tx_payload(msg)
-        msg['tx_hash'] = hexlify(sha256(sha256(payload))[::-1])
+        msg['tx_hash'] = hexlify(groestlhash(payload))[::-1]
 
         return msg
 
@@ -509,7 +509,7 @@ class Serializer(object):
         # Calculate hash from: version (4 bytes) + prev_block_hash (32 bytes) +
         # merkle_root (32 bytes) + timestamp (4 bytes) + bits (4 bytes) +
         # nonce (4 bytes) = 80 bytes
-        msg['block_hash'] = hexlify(sha256(sha256(data[:80]))[::-1])
+        msg['block_hash'] = hexlify(groestlhash(data[:80]))[::-1]
 
         data = StringIO(data)
 
@@ -694,7 +694,7 @@ class Serializer(object):
 
     def deserialize_block_header(self, data):
         header = data.read(80)
-        block_hash = sha256(sha256(header))[::-1]  # BE -> LE
+        block_hash = groestlhash(header)[::-1]  # BE -> LE
         header = StringIO(header)
         version = struct.unpack("<i", header.read(4))[0]
         prev_block_hash = header.read(32)[::-1]  # BE -> LE
