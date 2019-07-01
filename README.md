@@ -11,4 +11,4 @@ See [Install guide](https://github.com/Groestlcoin/groestlnodes/wiki/Install) fo
 The [Redis DB schema](https://github.com/Groestlcoin/groestlnodes/wiki/Redis-DB-schema) contains the list of keys and their associated values that are written by the scripts in this project.
 
 ### Production examples
-[Blockchair's Groestlcoin node explorer](https://blockchair.com/groestlcoin/nodes) and its [API call](https://api.blockchair.com/groestlcoin/nodes)
+[Blockchair Groestlcoin node explorer](https://blockchair.com/groestlcoin/nodes) and its [API call](https://api.blockchair.com/groestlcoin/nodes)
